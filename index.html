@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1.0, user-scalable=no, shrink-to-fit=yes">
+  <title>ZekaPark</title>
+  <style>
+    * { box-sizing: border-box; }
+    html, body {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: #16181d;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+    #unity-canvas {
+      width: 100vw;
+      height: 100vh;
+      display: block;
+      background: #16181d;
+      touch-action: none;
+    }
+    #loading-overlay {
+      position: fixed;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      background: #16181d;
+      color: #e5e7eb;
+      z-index: 10;
+    }
+    #loading-track {
+      width: min(280px, 70vw);
+      height: 8px;
+      border-radius: 999px;
+      background: #2b303b;
+      overflow: hidden;
+    }
+    #loading-fill {
+      width: 0%;
+      height: 100%;
+      background: #60a5fa;
+      transition: width 0.1s linear;
+    }
+    #loading-text {
+      font-size: 13px;
+      opacity: 0.8;
+    }
+    #fullscreen-btn {
+      position: fixed;
+      right: 14px;
+      bottom: 14px;
+      width: 38px;
+      height: 38px;
+      border: 1px solid rgba(255, 255, 255, 0.22);
+      border-radius: 8px;
+      background: rgba(22, 24, 29, 0.72);
+      color: #f3f4f6;
+      font-size: 18px;
+      line-height: 1;
+      cursor: pointer;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 5;
+    }
+    #fullscreen-btn:hover {
+      background: rgba(38, 42, 52, 0.9);
+    }
+    #error-banner {
+      position: fixed;
+      left: 50%;
+      top: 16px;
+      transform: translateX(-50%);
+      max-width: min(560px, 90vw);
+      padding: 10px 14px;
+      border-radius: 8px;
+      background: #991b1b;
+      color: #fef2f2;
+      font-size: 13px;
+      display: none;
+      z-index: 20;
+    }
+  </style>
+</head>
+<body>
+  <canvas id="unity-canvas" tabindex="-1"></canvas>
+  <div id="loading-overlay">
+    <div id="loading-track"><div id="loading-fill"></div></div>
+    <div id="loading-text">Yükleniyor... 0%</div>
+  </div>
+  <button id="fullscreen-btn" type="button" title="Tam Ekran" aria-label="Tam Ekran">⛶</button>
+  <div id="error-banner"></div>
+
+  <script>
+    const canvas = document.getElementById("unity-canvas");
+    const loadingOverlay = document.getElementById("loading-overlay");
+    const loadingFill = document.getElementById("loading-fill");
+    const loadingText = document.getElementById("loading-text");
+    const fullscreenBtn = document.getElementById("fullscreen-btn");
+    const errorBanner = document.getElementById("error-banner");
+
+    function showBanner(msg, type) {
+      if (type === "error") {
+        errorBanner.textContent = msg;
+        errorBanner.style.display = "block";
+      }
+    }
+
+    const buildUrl = "Build";
+    const loaderUrl = buildUrl + "/WebGL.loader.js";
+    const config = {
+      arguments: [],
+      dataUrl: buildUrl + "/WebGL.data.unityweb",
+      frameworkUrl: buildUrl + "/WebGL.framework.js.unityweb",
+      codeUrl: buildUrl + "/WebGL.wasm.unityweb",
+      streamingAssetsUrl: "StreamingAssets",
+      companyName: "DefaultCompany",
+      productName: "ZekaParkApp",
+      productVersion: "1.0",
+      showBanner: showBanner
+    };
+
+    const script = document.createElement("script");
+    script.src = loaderUrl;
+    script.onload = () => {
+      createUnityInstance(canvas, config, (progress) => {
+        const pct = Math.round(progress * 100);
+        loadingFill.style.width = pct + "%";
+        loadingText.textContent = "Yükleniyor... " + pct + "%";
+      }).then((unityInstance) => {
+        loadingOverlay.style.display = "none";
+        fullscreenBtn.style.display = "flex";
+        fullscreenBtn.onclick = () => unityInstance.SetFullscreen(1);
+      }).catch((message) => {
+        showBanner(String(message), "error");
+      });
+    };
+    script.onerror = () => showBanner("WebGL loader yüklenemedi.", "error");
+    document.body.appendChild(script);
+  </script>
+</body>
+</html>
